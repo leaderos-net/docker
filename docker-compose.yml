@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    hostname: nginx
+    restart: always
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates/
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./leaderos:/var/www/html
+    environment:
+      NGINX_ENVSUBST_TEMPLATE_SUFFIX: ".template"
+      SERVER_NAME: ${DOMAIN}
+    depends_on:
+      - php
+    networks:
+      - leaderos_network
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php
+    volumes:
+      - ./leaderos:/var/www/html
+    networks:
+      - leaderos_network
+
+  mariadb:
+    image: mariadb:10.5
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
+      MYSQL_DATABASE: ${SQL_DATABASE}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    command: mysqld --sql_mode=""
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - leaderos_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mariadb
+      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb
+    networks:
+      - leaderos_network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes: 
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+networks:
+  leaderos_network:
+    driver: bridge
+
+volumes:
+  mariadb_data:

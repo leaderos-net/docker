@@ -1,0 +1,93 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    root /var/www/html;
+    index /apps/main/public/index.php;
+
+    server_name ${SERVER_NAME} www.${SERVER_NAME};
+
+    client_max_body_size 128M;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_pass php:9000;
+        fastcgi_index /apps/main/public/index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+
+    location = /favicon.ico {
+        rewrite ^ /apps/main/public/favicon.png last;
+    }
+
+    location ~* \.(ini|log|sh|sql|htaccess)$ {
+        deny all;
+    }
+
+    location ~ "(^|/)apps/(dashboard|api|auto-install|install)(?!/public)(/?)" {
+        return 403;
+    }
+
+    location ~ "(^|/)apps/main(?!/public|/app/views/themes/[0-9a-zA-Z-_]+/assets)(/?)" {
+        return 403;
+    }
+
+    # Auto Installer Assets
+    location ~ "auto-install/assets/(.*)$" {
+        try_files $uri $uri/ /apps/auto-install/public/assets/$1;
+    }
+
+    # Installer Assets
+    location ~ "install/assets/(.*)$" {
+        try_files $uri $uri/ /apps/install/public/assets/$1;
+    }
+
+    # Dashboard Assets (cached)
+    location ~* ^/dashboard/assets/(.+)\.(\d+)\.(js|css|png|jpeg|jpg|webp|svg|gif|ico|mp3|mp4|json|ttf|eot|woff|woff2)$ {
+        try_files /apps/dashboard/public/assets/$1.$3 =404;
+    }
+
+    # Dashboard Assets direct access
+    location ~ ^/dashboard/assets/(.+)\.(js|css|png|jpeg|jpg|webp|svg|gif|ico|mp3|mp4|json|ttf|eot|woff|woff2)$ {
+        try_files $uri /apps/dashboard/public/assets/$1.$2;
+    }
+
+    # Images for Main
+    location ~ "assets/core/images/(.*)$" {
+        try_files $uri $uri/ /apps/main/public/images/$1;
+    }
+
+    # Theme Assets (cached)
+    location ~* ^/assets/([0-9a-zA-Z-_]+)/(.+)\.(\d+)\.(js|css|png|jpeg|jpg|webp|svg|gif|ico|mp3|mp4|json|ttf|eot|woff|woff2)$ {
+        try_files /apps/main/app/views/themes/$1/assets/$2.$4 =404;
+    }
+
+    # Theme Assets direct access
+    location ~ ^/assets/([0-9a-zA-Z-_]+)/(.+)\.(js|css|png|jpeg|jpg|webp|svg|gif|ico|mp3|mp4|json|ttf|eot|woff|woff2)$ {
+        try_files /apps/main/app/views/themes/$1/assets/$2.$3 =404;
+    }
+
+    location /auto-install {
+        try_files $uri $uri/ /apps/auto-install/public/index.php?$query_string;
+    }
+
+    location /install {
+        try_files $uri $uri/ /apps/install/public/index.php?$query_string;
+    }
+
+    location /api {
+        try_files $uri $uri/ /apps/api/public/index.php?$query_string;
+    }
+
+    location /dashboard {
+        try_files $uri $uri/ /apps/dashboard/public/index.php?$query_string;
+    }
+
+    location / {
+        try_files $uri $uri/ /apps/main/public/index.php?$query_string;
+    }
+}
