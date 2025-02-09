@@ -1,18 +1,33 @@
 version: '3.8'
 
 services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN=${DOMAIN}
+    depends_on:
+      - nginx
+    networks:
+      - leaderos_network
+
   nginx:
     image: nginx:latest
     hostname: nginx
     restart: always
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:8080"
     volumes:
       - ./nginx/templates:/etc/nginx/templates/
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
       - ./leaderos:/var/www/html
     environment:
       NGINX_ENVSUBST_TEMPLATE_SUFFIX: ".template"
@@ -57,18 +72,11 @@ services:
       PMA_HOST: mariadb
       MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
     ports:
-      - "8080:80"
+      - "8888:80"
     depends_on:
       - mariadb
     networks:
       - leaderos_network
-
-  certbot:
-    image: certbot/certbot
-    container_name: certbot
-    volumes: 
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
 
 networks:
   leaderos_network:
@@ -76,3 +84,5 @@ networks:
 
 volumes:
   mariadb_data:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,9 @@
+# Reverse Proxy for nginx
+{$DOMAIN} {
+    reverse_proxy nginx:8080
+}
+
+# Reverse Proxy for phpMyAdmin
+#phpmyadmin.{$DOMAIN} {
+#    reverse_proxy phpmyadmin:80
+#}
