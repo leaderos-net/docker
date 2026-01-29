@@ -5,12 +5,15 @@ RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     wget \
+    zip \
     mariadb-client \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
     libzip-dev \
-    zip \
+    libmagickwand-dev \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd mysqli pdo pdo_mysql zip exif
 
